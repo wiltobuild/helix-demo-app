@@ -12,8 +12,14 @@ export interface Cart {
   items: LineItem[];
 }
 
+export interface Discount {
+  code: string;
+  amount: Cents;
+}
+
 export interface Totals {
   subtotal: Cents;
+  discount?: Discount;
   shipping: Cents;
   total: Cents;
 }
@@ -26,8 +32,30 @@ export function subtotal(cart: Cart): Cents {
   return cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 }
 
-export function totals(cart: Cart): Totals {
+export function totals(cart: Cart, code?: string): Totals {
   const sub = subtotal(cart);
   const shipping = sub === 0 || sub >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING;
-  return { subtotal: sub, shipping, total: sub + shipping };
+  const result: Totals = { subtotal: sub, shipping, total: sub + shipping };
+
+  if (code !== undefined) {
+    const normalizedCode = code.toUpperCase();
+    let amount: Cents;
+    switch (normalizedCode) {
+      case 'SAVE10':
+        amount = -Math.floor(sub * 0.1);
+        break;
+      case 'FREESHIP':
+        amount = -shipping;
+        break;
+      default:
+        throw new Error(`Unknown discount code: ${normalizedCode}`);
+    }
+
+    if (amount < 0) {
+      result.discount = { code: normalizedCode, amount };
+      result.total += amount;
+    }
+  }
+
+  return result;
 }
