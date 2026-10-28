@@ -12,13 +12,16 @@ function line(label: string, amount: string): string {
 }
 
 /** A plain-text receipt, one line per item, then the totals. */
-export function receipt(cart: Cart): string {
-  const t = totals(cart);
+export function receipt(cart: Cart, code?: string): string {
+  const t = totals(cart, code);
   const lines = cart.items.map((item) =>
     line(`${item.quantity} x ${item.name}`, formatCents(item.unitPrice * item.quantity)),
   );
   lines.push('-'.repeat(WIDTH));
   lines.push(line('Subtotal', formatCents(t.subtotal)));
+  if (t.discount) {
+    lines.push(line(`Discount (${t.discount.code})`, formatCents(t.discount.amount)));
+  }
   lines.push(line('Shipping', t.shipping === 0 ? 'FREE' : formatCents(t.shipping)));
   lines.push(line('Total', formatCents(t.total)));
   return lines.join('\n');
