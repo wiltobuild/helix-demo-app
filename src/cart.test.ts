@@ -64,6 +64,8 @@ describe('totals', () => {
   it.each([
     ['save10', 'SAVE10'],
     ['fReEsHiP', 'FREESHIP'],
+    ['  save10 ', 'SAVE10'],
+    ['\t fReEsHiP \r\n', 'FREESHIP'],
   ])('normalizes %s to %s', (code, normalizedCode) => {
     const cart: Cart = { items: [mug] };
     const result = totals(cart, code);
