@@ -38,7 +38,7 @@ export function totals(cart: Cart, code?: string): Totals {
   const result: Totals = { subtotal: sub, shipping, total: sub + shipping };
 
   if (code !== undefined) {
-    const normalizedCode = code.toUpperCase();
+    const normalizedCode = code.trim().toUpperCase();
     let amount: Cents;
     switch (normalizedCode) {
       case 'SAVE10':
