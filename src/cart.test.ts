@@ -1,10 +1,80 @@
 import { describe, expect, it } from 'vitest';
-import { FLAT_SHIPPING, FREE_SHIPPING_THRESHOLD, totals, type Cart } from './cart.js';
+import { FLAT_SHIPPING, FREE_SHIPPING_THRESHOLD, GIFT_CARDS, totals, type Cart } from './cart.js';
 
 const mug = { sku: 'MUG', name: 'Mug', unitPrice: 1200, quantity: 2 };
 const lamp = { sku: 'LAMP', name: 'Lamp', unitPrice: 4500, quantity: 1 };
 
 describe('totals', () => {
+  it('uses a gift card to reduce the balance due while preserving the order total', () => {
+    expect(totals({ items: [mug] }, undefined, 'GIFT10')).toEqual({
+      subtotal: 2400,
+      shipping: FLAT_SHIPPING,
+      total: 2999,
+      giftCard: { code: 'GIFT10', amount: -1000, remaining: 0 },
+      balanceDue: 1999,
+    });
+  });
+
+  it('caps gift card usage at the total and keeps the remaining card balance', () => {
+    expect(totals({ items: [mug] }, undefined, 'GIFT50')).toEqual({
+      subtotal: 2400,
+      shipping: FLAT_SHIPPING,
+      total: 2999,
+      giftCard: { code: 'GIFT50', amount: -2999, remaining: 2001 },
+      balanceDue: 0,
+    });
+  });
+
+  it('applies a gift card after the discount and shipping', () => {
+    expect(totals({ items: [mug] }, 'SAVE10', 'GIFT50')).toEqual({
+      subtotal: 2400,
+      discount: { code: 'SAVE10', amount: -240 },
+      shipping: FLAT_SHIPPING,
+      total: 2759,
+      giftCard: { code: 'GIFT50', amount: -2759, remaining: 2241 },
+      balanceDue: 0,
+    });
+  });
+
+  it('normalizes a gift card code to upper case', () => {
+    expect(totals({ items: [mug] }, undefined, 'gift10')).toEqual(
+      totals({ items: [mug] }, undefined, 'GIFT10'),
+    );
+  });
+
+  it.each(['', '   ', '\t\n'])('rejects an empty gift card code %j', (giftCard) => {
+    expect(() => totals({ items: [mug] }, undefined, giftCard)).toThrow(
+      'Gift card code must not be empty',
+    );
+  });
+
+  it.each(['unknown', '__proto__'])('rejects the unknown gift card %s', (giftCard) => {
+    expect(() => totals({ items: [mug] }, undefined, giftCard)).toThrow(
+      `Unknown gift card code: ${giftCard.toUpperCase()}`,
+    );
+  });
+
+  it('includes gift card details even when an empty cart uses none of its balance', () => {
+    expect(totals({ items: [] }, undefined, 'GIFT10')).toEqual({
+      subtotal: 0,
+      shipping: 0,
+      total: 0,
+      giftCard: { code: 'GIFT10', amount: -0, remaining: GIFT_CARDS.GIFT10 },
+      balanceDue: 0,
+    });
+  });
+
+  it.each([undefined, 'SAVE10', 'FREESHIP'])(
+    'preserves the existing result with discount %s and an undefined gift card',
+    (code) => {
+      const cart: Cart = { items: [mug] };
+      const result = totals(cart, code, undefined);
+      expect(result).toEqual(totals(cart, code));
+      expect(result).not.toHaveProperty('giftCard');
+      expect(result).not.toHaveProperty('balanceDue');
+    },
+  );
+
   it('adds flat shipping under the free-shipping threshold', () => {
     const cart: Cart = { items: [mug] };
     expect(totals(cart)).toEqual({ subtotal: 2400, shipping: FLAT_SHIPPING, total: 2999 });
