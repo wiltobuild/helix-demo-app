@@ -8,5 +8,5 @@ in the demo. Money is whole cents throughout.
 
 ```sh
 npm install
-npm run ci   # format check, typecheck, tests (what CI runs)
+npm run ci   # format check, typecheck, tests
 ```
