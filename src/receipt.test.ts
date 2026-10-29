@@ -18,3 +18,15 @@ it('prints items and totals', () => {
     ].join('\n'),
   );
 });
+
+it('prints a receipt for an empty cart', () => {
+  const text = receipt({ items: [] });
+  expect(text).toBe(
+    [
+      '--------------------------------',
+      'Subtotal                   $0.00',
+      'Shipping                    FREE',
+      'Total                      $0.00',
+    ].join('\n'),
+  );
+});
