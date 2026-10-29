@@ -45,6 +45,13 @@ export function subtotal(cart: Cart): Cents {
   return cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 }
 
+/** Earn points on the amount paid after discounts and gift cards. */
+export function loyaltyPoints(t: Totals): number {
+  const due = t.balanceDue ?? t.total;
+  const dollars = Math.max(0, Math.floor(due / 100));
+  return dollars * (due >= 10000 ? 2 : 1);
+}
+
 export function totals(cart: Cart, code?: string, giftCard?: string): Totals {
   const sub = subtotal(cart);
   const shipping = sub === 0 || sub >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING;

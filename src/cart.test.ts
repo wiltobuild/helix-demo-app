@@ -1,8 +1,53 @@
 import { describe, expect, it } from 'vitest';
-import { FLAT_SHIPPING, FREE_SHIPPING_THRESHOLD, GIFT_CARDS, totals, type Cart } from './cart.js';
+import {
+  FLAT_SHIPPING,
+  FREE_SHIPPING_THRESHOLD,
+  GIFT_CARDS,
+  loyaltyPoints,
+  totals,
+  type Cart,
+} from './cart.js';
 
 const mug = { sku: 'MUG', name: 'Mug', unitPrice: 1200, quantity: 2 };
 const lamp = { sku: 'LAMP', name: 'Lamp', unitPrice: 4500, quantity: 1 };
+
+describe('loyaltyPoints', () => {
+  it('earns one point per whole dollar below $100, including shipping', () => {
+    const result = totals({ items: [mug] });
+    expect(result.total).toBe(2999);
+    expect(loyaltyPoints(result)).toBe(29);
+  });
+
+  it.each([
+    [9999, 99],
+    [10000, 200],
+    [12345, 246],
+  ])('awards %i cents due the expected %i points', (unitPrice, points) => {
+    const result = totals({ items: [{ ...mug, unitPrice, quantity: 1 }] });
+    expect(result.total).toBe(unitPrice);
+    expect(loyaltyPoints(result)).toBe(points);
+  });
+
+  it('earns zero points when a gift card fully covers the total', () => {
+    const result = totals({ items: [mug] }, undefined, 'GIFT50');
+    expect(result.total).toBe(2999);
+    expect(result.balanceDue).toBe(0);
+    expect(loyaltyPoints(result)).toBe(0);
+  });
+
+  it('uses the balance after both a discount and a gift card to determine points and doubling', () => {
+    const cart: Cart = { items: [{ ...mug, unitPrice: 15000, quantity: 1 }] };
+    const result = totals(cart, 'SAVE10', 'GIFT50');
+    expect(result.total).toBe(13500);
+    expect(result.balanceDue).toBe(8500);
+    expect(loyaltyPoints(result)).toBe(85);
+  });
+
+  it('keeps points non-negative', () => {
+    const result = totals({ items: [{ ...mug, unitPrice: -1000, quantity: 1 }] });
+    expect(loyaltyPoints(result)).toBe(0);
+  });
+});
 
 describe('totals', () => {
   it('uses a gift card to reduce the balance due while preserving the order total', () => {
