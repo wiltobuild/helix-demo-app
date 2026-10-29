@@ -12,8 +12,8 @@ function line(label: string, amount: string): string {
 }
 
 /** A plain-text receipt, one line per item, then the totals. */
-export function receipt(cart: Cart, code?: string): string {
-  const t = totals(cart, code);
+export function receipt(cart: Cart, code?: string, giftCard?: string): string {
+  const t = totals(cart, code, giftCard);
   const lines = cart.items.map((item) =>
     line(`${item.quantity} x ${item.name}`, formatCents(item.unitPrice * item.quantity)),
   );
@@ -24,5 +24,10 @@ export function receipt(cart: Cart, code?: string): string {
   }
   lines.push(line('Shipping', t.shipping === 0 ? 'FREE' : formatCents(t.shipping)));
   lines.push(line('Total', formatCents(t.total)));
+  if (t.giftCard) {
+    lines.push(line(`Gift card (${t.giftCard.code})`, formatCents(t.giftCard.amount)));
+    lines.push(line('Balance due', formatCents(t.balanceDue!)));
+    lines.push(line('Card balance', formatCents(t.giftCard.remaining)));
+  }
   return lines.join('\n');
 }

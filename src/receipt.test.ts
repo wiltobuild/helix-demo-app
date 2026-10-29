@@ -63,3 +63,69 @@ it('leaves the receipt unchanged when the code does not reduce the price', () =>
   const cart = { items: [{ sku: 'MUG', name: 'Mug', unitPrice: 1200, quantity: 5 }] };
   expect(receipt(cart, 'FREESHIP')).toBe(receipt(cart));
 });
+
+it('shows gift card, balance due, and card balance lines after Total', () => {
+  const text = receipt(
+    { items: [{ sku: 'MUG', name: 'Mug', unitPrice: 1200, quantity: 2 }] },
+    undefined,
+    'GIFT10',
+  );
+  expect(text).toBe(
+    [
+      '2 x Mug                   $24.00',
+      '--------------------------------',
+      'Subtotal                  $24.00',
+      'Shipping                   $5.99',
+      'Total                     $29.99',
+      'Gift card (GIFT10)       -$10.00',
+      'Balance due               $19.99',
+      'Card balance               $0.00',
+    ].join('\n'),
+  );
+});
+
+it('combines a discount code with a gift card', () => {
+  const text = receipt(
+    { items: [{ sku: 'MUG', name: 'Mug', unitPrice: 1200, quantity: 2 }] },
+    'SAVE10',
+    'GIFT10',
+  );
+  expect(text).toBe(
+    [
+      '2 x Mug                   $24.00',
+      '--------------------------------',
+      'Subtotal                  $24.00',
+      'Discount (SAVE10)         -$2.40',
+      'Shipping                   $5.99',
+      'Total                     $27.59',
+      'Gift card (GIFT10)       -$10.00',
+      'Balance due               $17.59',
+      'Card balance               $0.00',
+    ].join('\n'),
+  );
+});
+
+it('shows a $0.00 balance due when the gift card covers the whole total', () => {
+  const text = receipt(
+    { items: [{ sku: 'MUG', name: 'Mug', unitPrice: 1200, quantity: 2 }] },
+    undefined,
+    'GIFT50',
+  );
+  expect(text).toBe(
+    [
+      '2 x Mug                   $24.00',
+      '--------------------------------',
+      'Subtotal                  $24.00',
+      'Shipping                   $5.99',
+      'Total                     $29.99',
+      'Gift card (GIFT50)       -$29.99',
+      'Balance due                $0.00',
+      'Card balance              $20.01',
+    ].join('\n'),
+  );
+});
+
+it('leaves the receipt unchanged when no gift card is passed', () => {
+  const cart = { items: [{ sku: 'MUG', name: 'Mug', unitPrice: 1200, quantity: 2 }] };
+  expect(receipt(cart, undefined, undefined)).toBe(receipt(cart));
+});
