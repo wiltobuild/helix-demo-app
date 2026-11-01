@@ -1,8 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import { FLAT_SHIPPING, FREE_SHIPPING_THRESHOLD, GIFT_CARDS, totals, type Cart } from './cart.js';
+import {
+  FLAT_SHIPPING,
+  FREE_SHIPPING_THRESHOLD,
+  GIFT_CARDS,
+  itemCount,
+  totals,
+  type Cart,
+} from './cart.js';
 
 const mug = { sku: 'MUG', name: 'Mug', unitPrice: 1200, quantity: 2 };
 const lamp = { sku: 'LAMP', name: 'Lamp', unitPrice: 4500, quantity: 1 };
+
+describe('itemCount', () => {
+  it('returns zero for an empty cart', () => {
+    expect(itemCount({ items: [] })).toBe(0);
+  });
+
+  it('counts units in a one-line cart', () => {
+    expect(itemCount({ items: [mug] })).toBe(2);
+  });
+
+  it('sums quantities across lines without mutating the cart', () => {
+    const cart: Cart = { items: [{ ...mug }, { ...lamp, quantity: 3 }] };
+    const before = structuredClone(cart);
+    cart.items.forEach(Object.freeze);
+    Object.freeze(cart.items);
+    Object.freeze(cart);
+
+    expect(itemCount(cart)).toBe(5);
+    expect(cart).toEqual(before);
+  });
+});
 
 describe('totals', () => {
   it('uses a gift card to reduce the balance due while preserving the order total', () => {

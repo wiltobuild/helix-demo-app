@@ -41,6 +41,10 @@ export const GIFT_CARDS: Record<string, Cents> = {
   GIFT50: 5000,
 };
 
+export function itemCount(cart: Cart): number {
+  return cart.items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
 export function subtotal(cart: Cart): Cents {
   return cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 }
